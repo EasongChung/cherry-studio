@@ -1,3 +1,7 @@
+import type { FC } from 'react'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+
 import { MenuItem, MenuList, PageHeader, RowFlex } from '@cherrystudio/ui'
 import Scrollbar from '@renderer/components/Scrollbar'
 import {
@@ -9,9 +13,6 @@ import {
 import { getChannelTypeIcon } from '@renderer/utils/agentSession'
 import { useSharedCache } from '@renderer/data/hooks/useCache'
 import { Server } from 'lucide-react'
-import type { FC } from 'react'
-import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import ChannelDetail from './ChannelDetail'
 import { AVAILABLE_CHANNELS, type AvailableChannel } from './channelTypes'
