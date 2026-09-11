@@ -6872,6 +6872,23 @@
   }
 
   @media (max-width: 640px) {
+    /* Phones: the right panel fills the whole viewport instead of the 360px side
+       drawer; the backdrop is redundant once it covers the screen. Tablet keeps the drawer. */
+    .agent-status-panel {
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      width: 100vw;
+      max-width: 100vw;
+      border-left: 0;
+      box-shadow: none;
+    }
+
+    .agent-status-panel-backdrop {
+      display: none;
+    }
+
     .conversation-list {
       padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
     }
