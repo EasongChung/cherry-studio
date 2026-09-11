@@ -1,0 +1,54 @@
+name: WebUI Sync Gate (typecheck)
+
+# Upstream-sync step-2 gate. Runs on the sync branch after upstream is merged
+# but before the result is fast-forwarded into `webui`. Catches main-process
+# typecheck breaks (upstream internal contract changes the narrow bridge still
+# needs to adapt to) and fork `settings.webui` i18n loss — both unrunnable in
+# the local editing-only environment.
+on:
+  push:
+    branches: [webui-upstream-sync]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v6
+
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.node-version'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-gate-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-gate-
+            ${{ runner.os }}-pnpm-
+
+      - name: Install desktop dependencies
+        run: pnpm install
+
+      - name: Typecheck (node, web, aicore)
+        run: pnpm typecheck
+
+      - name: Verify fork settings.webui i18n survived the merge
+        run: pnpm exec vitest run --project renderer src/renderer/pages/settings/ChannelsSettings/__tests__/WebUiRemoteSettings.i18n.test.ts
