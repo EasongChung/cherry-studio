@@ -94,88 +94,50 @@ type MutableMarkdownLabels = {
 }
 
 /**
- * Preprocess GFM table syntax so markdown-it can render it during streaming.
- * markdown-it requires a complete table: header row + separator row (|---|) + optional body rows.
- * During streaming the table may be the last block in the source (typical) or a complete
- * table followed by later-generated text.  This function finds ALL `|`-prefixed table blocks
- * and fixes each one:
- *  1. Counts columns from the header row.
- *  2. If the separator row is missing or has fewer than 3 dashes per column, replaces it.
- *  3. Pads the last data row with trailing `|` and empty cells so it parses as a table row.
- * Does NOT modify the original source — only the display copy passed to markdown-it.
+ * Repair GFM tables in a display-only copy so markdown-it renders them mid-stream.
+ * Never mutates the source, and is idempotent: a well-formed table passes through unchanged.
  */
 const preprocessTable = (source: string): string => {
+  const cellCount = (line: string) => line.split('|').filter((c) => c.trim() !== '').length
+  // GFM delimiter row: each column matches `:?-+:?` after optional edge pipes (e.g. `| --- | --- |`).
+  const isDelimiter = (line: string) => {
+    const t = line.trim()
+    if (!t.includes('-')) return false
+    return t.replace(/^\|/, '').replace(/\|$/, '').split('|').every((c) => /^\s*:?-+:?\s*$/.test(c))
+  }
+  const makeSep = (cols: number) => `| ${Array.from({ length: cols }, () => '---').join(' | ')} |`
+  const fixBlock = (block: string[]): string[] => {
+    const cols = cellCount(block[0] ?? '')
+    if (cols < 2) return block
+    const delimAt = block.findIndex((line, idx) => idx > 0 && isDelimiter(line))
+    // Inject a separator only when the model has not emitted one yet; never duplicate an existing row.
+    const fixed = delimAt === -1 ? [block[0] ?? '', makeSep(cols), ...block.slice(1)] : block.slice()
+    // Pad a half-typed trailing data row so its last cell parses while streaming.
+    const lastIdx = fixed.length - 1
+    const last = fixed[lastIdx]
+    if (last && !isDelimiter(last)) {
+      let row = last.trim()
+      if (!row.endsWith('|')) row = `${row} |`
+      for (let n = cellCount(row); n < cols; n++) row = `${row}  |`
+      fixed[lastIdx] = `${last.match(/^\s*/)?.[0] ?? ''}${row}`
+    }
+    return fixed
+  }
   const lines = source.split('\n')
-  const result = [...lines]
-
-  // Scan every line for table blocks (consecutive |-prefixed lines with ≥2 rows).
-  let row = 0
-  while (row < result.length) {
-    const trimmed = result[row]?.trim() ?? ''
-    if (!trimmed.startsWith('|')) {
-      row++
+  const out: string[] = []
+  let i = 0
+  while (i < lines.length) {
+    if (!lines[i]?.trim().startsWith('|')) {
+      out.push(lines[i] ?? '')
+      i++
       continue
     }
-
-    // Found a candidate — walk the block.
-    const blockStart = row
-    while (row < result.length && (result[row]?.trim() ?? '').startsWith('|')) row++
-    const blockEnd = row - 1
-    if (blockEnd - blockStart < 1) continue // Need at least header + separator.
-
-    const header = result[blockStart]
-    if (!header) continue
-    const headerCells = header.split('|').filter((cell) => cell.trim() !== '').length
-    if (headerCells < 2) continue
-
-    // Find the separator row (must contain dashes).
-    let sepIdx = -1
-    for (let i = blockStart + 1; i <= blockEnd; i++) {
-      const t = result[i]?.trim() ?? ''
-      if (/^\|[\s\-:]+\|?$/.test(t) && /-/.test(t)) {
-        sepIdx = i
-        break
-      }
-    }
-
-    const makeSep = (cols: number) => `| ${Array.from({ length: cols }, () => '---').join(' | ')} |`
-
-    // Fix or insert the separator.
-    if (sepIdx >= 0) {
-      // Only replace if the existing separator has fewer than 3 dashes per column
-      // (streaming may produce `| - | - |` which markdown-it does not parse as a table).
-      const sepLine = result[sepIdx]?.trim() ?? ''
-      const sepCells = sepLine.split('|').filter((c) => c.trim() !== '')
-      const needsFix = sepCells.some((cell) => {
-        const stripped = cell.replaceAll(/[\s:]/g, '')
-        return stripped.length < 3 || !/^-+$/.test(stripped)
-      })
-      if (needsFix) result[sepIdx] = makeSep(headerCells)
-    } else {
-      result.splice(blockStart + 1, 0, makeSep(headerCells))
-      row++
-      // blockEnd shifted by the insert.
-    }
-
-    // Fix the last data row (skip if it's the separator itself).
-    const lastRow = result[blockEnd]
-    if (!lastRow) continue
-    const lastTrimmed = lastRow.trim()
-    if (!lastTrimmed.startsWith('|')) continue
-    if (/^\|[\s\-:]+\|?$/.test(lastTrimmed) && /-/.test(lastTrimmed)) continue
-
-    let fixed = lastTrimmed
-    if (!fixed.endsWith('|')) fixed = `${fixed} |`
-    const cells = fixed.split('|').filter((c) => c.trim() !== '')
-    while (cells.length < headerCells) {
-      cells.push('')
-      fixed = `${fixed}  |`
-    }
-    const indent = lastRow.match(/^\s*/)?.[0] ?? ''
-    result[blockEnd] = `${indent}${fixed}`
+    let j = i
+    while (j < lines.length && lines[j]?.trim().startsWith('|')) j++
+    out.push(...fixBlock(lines.slice(i, j)))
+    i = j
   }
-
-  return result.join('\n')
+  return out.join('\n')
 }
 
 export const renderMarkdown = (source: string, options: RenderMarkdownOptions = {}) => {
