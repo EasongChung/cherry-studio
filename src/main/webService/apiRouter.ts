@@ -462,6 +462,8 @@ const generateWebUiSessionTitle = async (sessionId: string) => {
   const language = application.get('PreferenceService').get('app.language') || 'en-us'
   const system = (configuredPrompt || WEBUI_TITLE_PROMPT).replaceAll('{{language}}', language)
   const { text } = await application.get('AiService').generateText({
+    // Upstream v2.0.13+ made `conversation` required on AiChatRequest.
+    conversation: { id: sessionId },
     assistantId: session.agentId,
     uniqueModelId: resolveWebUiNamingModelId(),
     system,
