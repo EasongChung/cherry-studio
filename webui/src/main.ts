@@ -17,6 +17,7 @@ import {
 import AskUserQuestionPanel from './components/AskUserQuestionPanel.vue'
 import AuthPanel, { type RememberVerifyOption } from './components/AuthPanel.vue'
 import PermissionRequestPanel from './components/PermissionRequestPanel.vue'
+import TaskProgressWidget from './components/TaskProgressWidget.vue'
 import SettingsModal from './components/SettingsModal.vue'
 import ToolCallBlock from './components/ToolCallBlock.vue'
 import { createWebUiHttpClient, WebUiHttpError } from './service/httpClient'
@@ -641,6 +642,7 @@ const App = defineComponent({
         medium: 'reasoningMedium',
         high: 'reasoningHigh',
         xhigh: 'reasoningXhigh',
+        max: 'reasoningMax',
         auto: 'reasoningAuto'
       }
       return text(labels[reasoningEffort.value] ?? 'reasoningDefault')
@@ -1092,7 +1094,8 @@ const App = defineComponent({
       tool: WebUiToolCallSnapshot,
       message: WebUiMessageSnapshot,
       approved: boolean,
-      updatedInput?: Record<string, unknown>
+      updatedInput?: Record<string, unknown>,
+      reason?: string
     ) => {
       const conversationId = selectedConversationId.value
       const approvalId = tool.approvalId
@@ -1106,7 +1109,8 @@ const App = defineComponent({
           {
             approvalId,
             approved,
-            ...(approved ? {} : { reason: text('denyTool') }),
+            // Deny carries the user's typed reason; fall back to the generic label when left blank.
+            ...(approved ? {} : { reason: reason?.trim() || text('denyTool') }),
             ...(updatedInput !== undefined ? { updatedInput } : {})
           }
         )
@@ -1183,7 +1187,7 @@ const App = defineComponent({
         submitting: isApprovalSubmitting(pending.message.id, pending.tool.id),
         approvalError: approvalErrorByKey.value[approvalKey(pending.message.id, pending.tool.id)],
         onApprove: () => void respondToolApproval(pending.tool, pending.message, true),
-        onDeny: () => void respondToolApproval(pending.tool, pending.message, false)
+        onDeny: (reason: string) => void respondToolApproval(pending.tool, pending.message, false, undefined, reason)
       })
     }
 
@@ -7156,6 +7160,15 @@ const App = defineComponent({
                             )
                     ]
                   )
+                : undefined,
+              agentStatus.value.tasks.length > 0
+                ? h(TaskProgressWidget, {
+                    key: 'task-progress-widget',
+                    status: agentStatus.value,
+                    streaming: isCurrentlyStreaming.value,
+                    text,
+                    onAbort: () => void abortMessage()
+                  })
                 : undefined,
               newConversationOpen.value
                 ? h('div', { class: 'modal-backdrop' }, [

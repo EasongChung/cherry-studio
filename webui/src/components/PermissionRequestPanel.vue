@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+
 import type { WebUiMessageSnapshot, WebUiToolCallSnapshot } from '../types/api'
 import type { TextKey } from '../utils/textPacks'
 
@@ -13,8 +15,10 @@ defineProps<{
 
 const emit = defineEmits<{
   approve: []
-  deny: []
+  deny: [reason: string]
 }>()
+
+const reasonDraft = ref('')
 </script>
 
 <template>
@@ -48,6 +52,15 @@ const emit = defineEmits<{
       <div v-if="preview" class="permission-request-preview">
         <pre class="permission-request-preview-body">{{ preview }}</pre>
       </div>
+      <div v-if="tool.approvalId" class="permission-request-reason">
+        <textarea
+          v-model="reasonDraft"
+          class="permission-request-reason-input"
+          rows="2"
+          :placeholder="text('denyReasonPlaceholder')"
+          :disabled="submitting"
+        ></textarea>
+      </div>
       <div v-if="tool.approvalId" class="permission-request-actions">
         <button
           class="permission-request-option"
@@ -64,7 +77,7 @@ const emit = defineEmits<{
           type="button"
           :disabled="submitting"
           :aria-label="text('denyTool')"
-          @click="emit('deny')"
+          @click="emit('deny', reasonDraft)"
         >
           <span class="permission-request-option-index">2</span>
           <span class="permission-request-option-label">{{ text('denyTool') }}</span>

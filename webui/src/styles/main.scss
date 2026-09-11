@@ -3899,6 +3899,28 @@
     color: #b91c1c;
   }
 
+  .permission-request-reason {
+    margin-top: 8px;
+  }
+
+  .permission-request-reason-input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 8px 10px;
+    color: #111827;
+    font: inherit;
+    font-size: 13px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    resize: vertical;
+  }
+
+  .permission-request-reason-input:focus {
+    border-color: #9ca3af;
+    outline: none;
+  }
+
   .permission-request-readonly {
     margin: 8px 0 0;
     color: #92400e;
@@ -3909,6 +3931,143 @@
     margin: 8px 0 0;
     color: #b91c1c;
     font-size: 12px;
+  }
+
+  .task-progress-widget {
+    position: fixed;
+    right: 20px;
+    bottom: 88px;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  .task-progress-ball {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    flex: 0 0 auto;
+    place-items: center;
+    color: #ffffff;
+    background: #111827;
+    border: 0;
+    border-radius: 999px;
+    box-shadow: 0 8px 24px rgba(17, 24, 39, 0.28);
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .task-progress-ball:active {
+    cursor: grabbing;
+  }
+
+  .task-progress-widget.is-streaming .task-progress-ball {
+    animation: task-progress-pulse 1.4s ease-in-out infinite;
+  }
+
+  .task-progress-ball-count {
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .task-progress-panel {
+    display: flex;
+    flex-direction: column;
+    width: min(280px, calc(100vw - 32px));
+    max-height: 60vh;
+    overflow: hidden;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(17, 24, 39, 0.18);
+  }
+
+  .task-progress-header {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 12px;
+    cursor: grab;
+    touch-action: none;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .task-progress-title {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    color: #111827;
+    font-size: 13px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .task-progress-collapse {
+    display: inline-flex;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .task-progress-collapse:hover {
+    background: #f3f4f6;
+  }
+
+  .task-progress-list {
+    min-height: 0;
+    flex: 1;
+    padding: 8px 12px;
+    margin: 0;
+    overflow-y: auto;
+    list-style: none;
+  }
+
+  .task-progress-footer {
+    display: flex;
+    padding: 8px 12px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .task-progress-abort {
+    width: 100%;
+    padding: 8px 12px;
+    color: #b91c1c;
+    font-size: 13px;
+    font-weight: 600;
+    background: transparent;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  .task-progress-abort:hover:not(:disabled) {
+    background: #fef2f2;
+  }
+
+  .task-progress-abort:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  @keyframes task-progress-pulse {
+    0%,
+    100% {
+      box-shadow: 0 8px 24px rgba(17, 24, 39, 0.28), 0 0 0 0 rgba(59, 130, 246, 0.45);
+    }
+    50% {
+      box-shadow: 0 8px 24px rgba(17, 24, 39, 0.28), 0 0 0 8px rgba(59, 130, 246, 0);
+    }
   }
 
   /* AskUserQuestion panel — reuses the permission-request card shell, adds a question form. */
@@ -5549,12 +5708,61 @@
     color: #fca5a5;
   }
 
+  :root[data-webui-theme='dark'] .permission-request-reason-input {
+    color: #f3f4f6;
+    background: #111827;
+    border-color: #374151;
+  }
+
+  :root[data-webui-theme='dark'] .permission-request-reason-input:focus {
+    border-color: #6b7280;
+  }
+
   :root[data-webui-theme='dark'] .permission-request-readonly {
     color: #fbbf24;
   }
 
   :root[data-webui-theme='dark'] .permission-request-error {
     color: #fca5a5;
+  }
+
+  :root[data-webui-theme='dark'] .task-progress-ball {
+    color: #111827;
+    background: #f3f4f6;
+  }
+
+  :root[data-webui-theme='dark'] .task-progress-panel {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  :root[data-webui-theme='dark'] .task-progress-header {
+    border-bottom-color: #374151;
+  }
+
+  :root[data-webui-theme='dark'] .task-progress-title {
+    color: #f3f4f6;
+  }
+
+  :root[data-webui-theme='dark'] .task-progress-collapse {
+    color: #9ca3af;
+  }
+
+  :root[data-webui-theme='dark'] .task-progress-collapse:hover {
+    background: #374151;
+  }
+
+  :root[data-webui-theme='dark'] .task-progress-footer {
+    border-top-color: #374151;
+  }
+
+  :root[data-webui-theme='dark'] .task-progress-abort {
+    color: #fca5a5;
+    border-color: #7f1d1d;
+  }
+
+  :root[data-webui-theme='dark'] .task-progress-abort:hover:not(:disabled) {
+    background: rgba(127, 29, 29, 0.3);
   }
 
   :root[data-webui-theme='dark'] .ask-user-question-close {
